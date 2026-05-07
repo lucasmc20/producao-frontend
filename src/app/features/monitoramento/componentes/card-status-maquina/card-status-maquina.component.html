@@ -1,0 +1,37 @@
+<mat-card appearance="outlined" [class]="'border-l-4 ' + classeBorda">
+  <mat-card-content class="p-5">
+    <div class="flex items-start justify-between mb-3">
+      <div>
+        <h3 class="text-operador-lg font-semibold text-gray-900">{{ maquina.nome }}</h3>
+        <p class="text-operador-sm text-gray-500">{{ maquina.tipo }}</p>
+      </div>
+      <app-indicador-status [status]="maquina.status" tamanho="sm"></app-indicador-status>
+    </div>
+
+    <div class="flex items-center gap-1 text-operador-sm text-gray-500 mb-3">
+      <mat-icon class="!text-base !w-4 !h-4">location_on</mat-icon>
+      {{ maquina.localizacao }}
+    </div>
+
+    @if (podeAlterarStatus) {
+      <mat-form-field appearance="outline" class="w-full !text-sm" subscriptSizing="dynamic">
+        <mat-label>Novo Status</mat-label>
+        <mat-select [value]="novoStatus()" (valueChange)="novoStatus.set($event)">
+          @for (s of statusDisponiveis; track s) {
+            <mat-option [value]="s" [disabled]="s === maquina.status">
+              {{ labelStatus[s] }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (novoStatus() && novoStatus() !== maquina.status) {
+        <button mat-raised-button color="primary" class="w-full mt-2 !text-sm"
+          [disabled]="alterando()" (click)="confirmarAlteracao()">
+          <mat-icon>save</mat-icon>
+          Aplicar
+        </button>
+      }
+    }
+  </mat-card-content>
+</mat-card>

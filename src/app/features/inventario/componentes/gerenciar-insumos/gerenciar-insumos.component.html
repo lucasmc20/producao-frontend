@@ -1,0 +1,263 @@
+<div class="p-6">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-operador-xl font-bold text-fabrica-azul">Estoque de Insumos</h1>
+    @if (podeGerenciar()) {
+      <button mat-raised-button color="primary" (click)="mostrandoFormCadastro.set(true)">
+        <mat-icon>add</mat-icon>
+        Novo Insumo
+      </button>
+    }
+  </div>
+
+  <!-- Alertas -->
+  @if (sucesso()) {
+    <div class="bg-green-50 border border-green-200 text-green-800 rounded-lg p-3 mb-4 flex items-center gap-2">
+      <mat-icon class="text-green-600">check_circle</mat-icon>
+      {{ sucesso() }}
+    </div>
+  }
+  @if (erro() && !mostrandoFormCadastro() && !insumoEntrada() && !insumoEditando()) {
+    <div class="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 mb-4 flex items-center gap-2">
+      <mat-icon class="text-red-600">error_outline</mat-icon>
+      {{ erro() }}
+    </div>
+  }
+
+  <!-- Formulário Cadastro -->
+  @if (mostrandoFormCadastro()) {
+    <mat-card appearance="outlined" class="mb-6 border-l-4 !border-l-fabrica-azul-medio">
+      <mat-card-header><mat-card-title>Cadastrar Novo Insumo</mat-card-title></mat-card-header>
+      <mat-card-content class="p-4">
+        @if (erro()) {
+          <div class="bg-red-50 border border-red-200 text-red-700 rounded p-3 mb-4 text-operador-sm">{{ erro() }}</div>
+        }
+        <form [formGroup]="formCadastro" (ngSubmit)="cadastrar()" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <mat-form-field appearance="outline">
+            <mat-label>Nome</mat-label>
+            <input matInput formControlName="nome" placeholder="Ex.: Resina Epóxi" />
+            @if (formCadastro.get('nome')?.hasError('required') && formCadastro.get('nome')?.touched) {
+              <mat-error>Nome é obrigatório</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Unidade de Medida</mat-label>
+            <mat-select formControlName="unidadeMedida">
+              @for (u of unidades; track u) {
+                <mat-option [value]="u">{{ getLabelUnidade(u) }}</mat-option>
+              }
+            </mat-select>
+            @if (formCadastro.get('unidadeMedida')?.hasError('required') && formCadastro.get('unidadeMedida')?.touched) {
+              <mat-error>Unidade é obrigatória</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="md:col-span-2">
+            <mat-label>Descrição (opcional)</mat-label>
+            <textarea matInput formControlName="descricao" rows="2"></textarea>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Saldo Inicial</mat-label>
+            <input matInput type="number" min="0" step="0.001" formControlName="saldoInicial" />
+            @if (formCadastro.get('saldoInicial')?.hasError('min')) {
+              <mat-error>Não pode ser negativo</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Estoque Mínimo</mat-label>
+            <input matInput type="number" min="0" step="0.001" formControlName="estoqueMinimo" />
+            @if (formCadastro.get('estoqueMinimo')?.hasError('min')) {
+              <mat-error>Não pode ser negativo</mat-error>
+            }
+          </mat-form-field>
+
+          <div class="md:col-span-2 flex justify-end gap-3">
+            <button mat-stroked-button type="button" (click)="mostrandoFormCadastro.set(false)">Cancelar</button>
+            <button mat-raised-button color="primary" type="submit" [disabled]="formCadastro.invalid || enviando()">
+              @if (enviando()) { <mat-spinner diameter="20"></mat-spinner> }
+              @else { <mat-icon>save</mat-icon> Salvar }
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Formulário Edição -->
+  @if (insumoEditando(); as insumo) {
+    <mat-card appearance="outlined" class="mb-6 border-l-4 !border-l-fabrica-amarelo">
+      <mat-card-header><mat-card-title>Editar Insumo — {{ insumo.nome }}</mat-card-title></mat-card-header>
+      <mat-card-content class="p-4">
+        @if (erro()) {
+          <div class="bg-red-50 border border-red-200 text-red-700 rounded p-3 mb-4 text-operador-sm">{{ erro() }}</div>
+        }
+        <form [formGroup]="formEdicao" (ngSubmit)="salvarEdicao()" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <mat-form-field appearance="outline">
+            <mat-label>Nome</mat-label>
+            <input matInput formControlName="nome" />
+            @if (formEdicao.get('nome')?.hasError('required') && formEdicao.get('nome')?.touched) {
+              <mat-error>Nome é obrigatório</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Unidade de Medida</mat-label>
+            <mat-select formControlName="unidadeMedida">
+              @for (u of unidades; track u) {
+                <mat-option [value]="u">{{ getLabelUnidade(u) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="md:col-span-2">
+            <mat-label>Descrição (opcional)</mat-label>
+            <textarea matInput formControlName="descricao" rows="2"></textarea>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Estoque Mínimo</mat-label>
+            <input matInput type="number" min="0" step="0.001" formControlName="estoqueMinimo" />
+            @if (formEdicao.get('estoqueMinimo')?.hasError('min')) {
+              <mat-error>Não pode ser negativo</mat-error>
+            }
+          </mat-form-field>
+
+          <div class="md:col-span-2 flex justify-end gap-3">
+            <button mat-stroked-button type="button" (click)="cancelarEdicao()">Cancelar</button>
+            <button mat-raised-button color="primary" type="submit" [disabled]="formEdicao.invalid || enviando()">
+              @if (enviando()) { <mat-spinner diameter="20"></mat-spinner> }
+              @else { <mat-icon>save</mat-icon> Salvar Alterações }
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Formulário Entrada de Estoque -->
+  @if (insumoEntrada(); as insumo) {
+    <mat-card appearance="outlined" class="mb-6 border-l-4 !border-l-fabrica-verde">
+      <mat-card-header>
+        <mat-card-title>Registrar Entrada — {{ insumo.nome }}</mat-card-title>
+        <mat-card-subtitle>Saldo atual: {{ insumo.saldoDisponivel | number:'1.0-3' }} {{ insumo.unidadeMedida | unidadeMedida }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="p-4">
+        @if (erro()) {
+          <div class="bg-red-50 border border-red-200 text-red-700 rounded p-3 mb-4 text-operador-sm">{{ erro() }}</div>
+        }
+        <form [formGroup]="formEntrada" (ngSubmit)="confirmarEntrada()" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <mat-form-field appearance="outline">
+            <mat-label>Quantidade ({{ insumo.unidadeMedida | unidadeMedida }})</mat-label>
+            <input matInput type="number" min="0.001" step="0.001" formControlName="quantidade" />
+            @if (formEntrada.get('quantidade')?.hasError('required') && formEntrada.get('quantidade')?.touched) {
+              <mat-error>Quantidade é obrigatória</mat-error>
+            }
+            @if (formEntrada.get('quantidade')?.hasError('min')) {
+              <mat-error>Deve ser maior que zero</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Observação (opcional)</mat-label>
+            <input matInput formControlName="observacao" placeholder="Ex.: Nota fiscal 1234" />
+          </mat-form-field>
+
+          <div class="md:col-span-2 flex justify-end gap-3">
+            <button mat-stroked-button type="button" (click)="cancelarEntrada()">Cancelar</button>
+            <button mat-raised-button color="primary" type="submit" [disabled]="formEntrada.invalid || enviando()">
+              @if (enviando()) { <mat-spinner diameter="20"></mat-spinner> }
+              @else { <mat-icon>add_circle</mat-icon> Registrar Entrada }
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Tabela de Insumos -->
+  <mat-card appearance="outlined">
+    <mat-card-header><mat-card-title>Insumos Cadastrados</mat-card-title></mat-card-header>
+    <mat-card-content>
+      @if (carregando()) {
+        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+      } @else {
+        <table mat-table [dataSource]="insumos()" class="w-full">
+
+          <ng-container matColumnDef="nome">
+            <th mat-header-cell *matHeaderCellDef>Nome</th>
+            <td mat-cell *matCellDef="let i">
+              <div class="font-medium">{{ i.nome }}</div>
+              @if (i.descricao) { <div class="text-xs text-gray-400">{{ i.descricao }}</div> }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="unidade">
+            <th mat-header-cell *matHeaderCellDef>Unidade</th>
+            <td mat-cell *matCellDef="let i">{{ i.unidadeMedida | unidadeMedida }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="saldo">
+            <th mat-header-cell *matHeaderCellDef>Saldo Disponível</th>
+            <td mat-cell *matCellDef="let i" [class.text-fabrica-vermelho]="estoqueBaixo(i)" [class.font-bold]="estoqueBaixo(i)">
+              {{ i.saldoDisponivel | number:'1.0-3' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="minimo">
+            <th mat-header-cell *matHeaderCellDef>Mínimo</th>
+            <td mat-cell *matCellDef="let i" class="text-gray-500">{{ i.estoqueMinimo | number:'1.0-3' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let i">
+              @if (estoqueBaixo(i)) {
+                <span class="inline-flex items-center gap-1 text-fabrica-vermelho text-xs font-semibold">
+                  <mat-icon style="font-size:14px;width:14px;height:14px">warning</mat-icon>
+                  Estoque Baixo
+                </span>
+              } @else {
+                <span class="text-fabrica-verde text-xs font-semibold">OK</span>
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="acoes">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let i">
+              @if (podeGerenciar()) {
+                <div class="flex items-center gap-1">
+                  <button mat-icon-button title="Registrar entrada de estoque" (click)="abrirEntrada(i)">
+                    <mat-icon class="text-fabrica-verde">add_circle_outline</mat-icon>
+                  </button>
+                  <button mat-icon-button title="Editar insumo" (click)="abrirEdicao(i)">
+                    <mat-icon class="text-fabrica-azul-medio">edit</mat-icon>
+                  </button>
+                  <button mat-icon-button title="Remover insumo" (click)="confirmarRemocao(i)">
+                    <mat-icon class="text-fabrica-vermelho">delete_outline</mat-icon>
+                  </button>
+                </div>
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="colunas"></tr>
+          <tr mat-row *matRowDef="let row; columns: colunas;" class="hover:bg-gray-50"></tr>
+
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell text-center py-6 text-gray-500" [attr.colspan]="colunas.length">
+              Nenhum insumo cadastrado.
+            </td>
+          </tr>
+        </table>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

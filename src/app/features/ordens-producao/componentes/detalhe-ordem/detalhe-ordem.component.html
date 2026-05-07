@@ -1,0 +1,152 @@
+@if (carregando()) {
+  <div class="p-6">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  </div>
+}
+
+@if (ordem(); as ord) {
+  <div class="p-6">
+    <div class="flex items-center gap-3 mb-6">
+      <a mat-button routerLink="/ordens">
+        <mat-icon>arrow_back</mat-icon>
+        Voltar
+      </a>
+    </div>
+
+    <!-- Cabeçalho -->
+    <mat-card appearance="outlined" class="mb-6">
+      <mat-card-content class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-4">
+            <h1 class="text-operador-xl font-bold text-gray-900 font-mono">{{ ord.codigoOrdem }}</h1>
+            <app-indicador-status [status]="ord.status"></app-indicador-status>
+          </div>
+
+          <div class="flex gap-2">
+            @if (ord.status === 'PENDENTE') {
+              <button mat-raised-button color="primary" (click)="confirmarIniciarLote()" [disabled]="processando()">
+                <mat-icon>play_arrow</mat-icon>
+                Iniciar Produção
+              </button>
+            }
+            @if (ord.status === 'EM_ANDAMENTO') {
+              <button mat-raised-button color="primary" (click)="confirmarFinalizar()" [disabled]="processando()">
+                <mat-icon>check_circle</mat-icon>
+                Finalizar
+              </button>
+            }
+            @if (auth.perfilAtual() === 'ADMINISTRADOR' && (ord.status === 'PENDENTE' || ord.status === 'EM_ANDAMENTO' || ord.status === 'PAUSADA')) {
+              <button mat-stroked-button color="warn" (click)="confirmarCancelar()" [disabled]="processando()">
+                <mat-icon>cancel</mat-icon>
+                Cancelar Ordem
+              </button>
+            }
+          </div>
+        </div>
+
+        <p class="text-operador-base text-gray-600 mb-4">{{ ord.descricao }}</p>
+
+        <mat-divider class="mb-4"></mat-divider>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-operador-sm">
+          <div>
+            <span class="text-gray-500 block">Máquina</span>
+            <span class="text-gray-900">{{ ord.nomeMaquina ?? '—' }}</span>
+          </div>
+          <div>
+            <span class="text-gray-500 block">Operador</span>
+            <span class="text-gray-900">{{ ord.loginOperador ?? '—' }}</span>
+          </div>
+          <div>
+            <span class="text-gray-500 block">Qtd. Planejada</span>
+            <span class="text-gray-900 font-mono">{{ ord.quantidadePlanejada }}</span>
+          </div>
+          <div>
+            <span class="text-gray-500 block">Qtd. Produzida</span>
+            <span class="text-gray-900 font-mono">{{ ord.quantidadeProduzida }}</span>
+          </div>
+        </div>
+
+        @if (ord.iniciadoEm) {
+          <p class="text-operador-sm text-gray-500 mt-4">
+            Iniciado em: {{ ord.iniciadoEm | date:'dd/MM/yyyy HH:mm' }}
+            @if (ord.finalizadoEm) {
+              | Finalizado em: {{ ord.finalizadoEm | date:'dd/MM/yyyy HH:mm' }}
+            }
+          </p>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Formulário de Finalização -->
+    @if (mostrandoFormFinalizar()) {
+      <mat-card appearance="outlined" class="mb-6 border-l-4 !border-l-fabrica-verde">
+        <mat-card-header>
+          <mat-card-title>Finalizar Ordem</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="p-4">
+          <form [formGroup]="formFinalizar" (ngSubmit)="finalizarOrdem()" class="flex items-end gap-4">
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>Quantidade Produzida</mat-label>
+              <input matInput type="number" formControlName="quantidadeProduzida"
+                step="0.0001" min="0" placeholder="Ex.: 950" />
+              @if (formFinalizar.get('quantidadeProduzida')?.hasError('required') && formFinalizar.get('quantidadeProduzida')?.touched) {
+                <mat-error>Quantidade é obrigatória</mat-error>
+              }
+              @if (formFinalizar.get('quantidadeProduzida')?.hasError('min')) {
+                <mat-error>Quantidade não pode ser negativa</mat-error>
+              }
+            </mat-form-field>
+            <button mat-raised-button color="primary" type="submit"
+              [disabled]="formFinalizar.invalid || processando()">
+              Confirmar Finalização
+            </button>
+            <button mat-stroked-button type="button" (click)="mostrandoFormFinalizar.set(false)">
+              Cancelar
+            </button>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <!-- Registro de Lote -->
+    @if (ord.status === 'EM_ANDAMENTO') {
+      <div class="mb-6">
+        <app-registro-lote [ordemId]="ord.id" (loteRegistrado)="aoRegistrarLote()"></app-registro-lote>
+      </div>
+    }
+
+    <!-- Lista de Lotes -->
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Lotes Registrados</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (lotes().length === 0) {
+          <p class="text-gray-500 text-operador-base py-4">Nenhum lote registrado nesta ordem.</p>
+        } @else {
+          <mat-list>
+            @for (lote of lotes(); track lote.id) {
+              <mat-list-item>
+                <mat-icon matListItemIcon>layers</mat-icon>
+                <span matListItemTitle class="font-mono">{{ lote.numeroLote | formatoLote }}</span>
+                <span matListItemLine class="text-gray-400">
+                  {{ lote.nomeInsumo }} | {{ lote.quantidadeConsumida }} | {{ lote.registradoPorLogin }}
+                </span>
+                <div matListItemMeta class="flex items-center gap-2">
+                  <app-indicador-status [status]="lote.status" tamanho="sm"></app-indicador-status>
+                  @if (lote.status === 'ABERTO' && ord.status === 'EM_ANDAMENTO') {
+                    <button mat-stroked-button class="!text-xs !h-8" (click)="confirmarFecharLote(lote)">
+                      <mat-icon class="!text-sm">lock</mat-icon>
+                      Fechar
+                    </button>
+                  }
+                </div>
+              </mat-list-item>
+            }
+          </mat-list>
+        }
+      </mat-card-content>
+    </mat-card>
+  </div>
+}

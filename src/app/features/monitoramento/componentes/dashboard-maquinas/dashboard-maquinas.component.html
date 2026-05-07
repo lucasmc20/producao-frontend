@@ -1,0 +1,46 @@
+<div class="p-6">
+  <h1 class="text-operador-xl font-bold mb-6" style="color: #1e3a5f">Monitoramento de Máquinas</h1>
+
+  <!-- Resumo rápido -->
+  <div class="grid grid-cols-3 gap-4 mb-8">
+    <mat-card appearance="outlined" class="!border-fabrica-verde/30 text-center">
+      <mat-card-content class="p-4">
+        <mat-icon class="text-fabrica-verde !text-4xl !w-10 !h-10 mb-1">check_circle</mat-icon>
+        <span class="text-3xl font-bold text-fabrica-verde block">{{ store.totalEmOperacao() }}</span>
+        <p class="text-operador-sm text-gray-500 mt-1">Operando</p>
+      </mat-card-content>
+    </mat-card>
+    <mat-card appearance="outlined" class="!border-fabrica-amarelo/50 text-center">
+      <mat-card-content class="p-4">
+        <mat-icon class="text-fabrica-amarelo !text-4xl !w-10 !h-10 mb-1">warning</mat-icon>
+        <span class="text-3xl font-bold text-fabrica-amarelo block">{{ store.totalComAlerta() }}</span>
+        <p class="text-operador-sm text-gray-500 mt-1">Manutenção</p>
+      </mat-card-content>
+    </mat-card>
+    <mat-card appearance="outlined" class="!border-fabrica-vermelho/50 text-center">
+      <mat-card-content class="p-4">
+        <mat-icon class="text-fabrica-vermelho !text-4xl !w-10 !h-10 mb-1">error</mat-icon>
+        <span class="text-3xl font-bold text-fabrica-vermelho block">{{ store.totalParadas() }}</span>
+        <p class="text-operador-sm text-gray-500 mt-1">Paradas</p>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  @if (store.carregando()) {
+    <mat-progress-bar mode="indeterminate" class="mb-4"></mat-progress-bar>
+  }
+
+  @if (store.erro(); as erro) {
+    <div class="bg-red-50 border border-red-300 rounded-lg p-4 mb-4">
+      <p class="text-red-700 text-operador-base">{{ erro }}</p>
+    </div>
+  }
+
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    @for (maquina of store.maquinas(); track maquina.id) {
+      <app-card-status-maquina [maquina]="maquina"
+        (statusAlterado)="store.atualizarMaquinaLocal($event)">
+      </app-card-status-maquina>
+    }
+  </div>
+</div>

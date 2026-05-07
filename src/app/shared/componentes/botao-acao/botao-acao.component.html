@@ -1,0 +1,26 @@
+@if (variante === 'secundario') {
+  <button
+    mat-stroked-button
+    [disabled]="desabilitado || carregando"
+    (click)="executar()"
+    [class.h-12]="tamanho === 'grande'"
+    type="button">
+    @if (carregando) {
+      <mat-spinner diameter="18" class="inline-block mr-2"></mat-spinner>
+    }
+    {{ rotulo }}
+  </button>
+} @else {
+  <button
+    mat-raised-button
+    [color]="corMaterial"
+    [disabled]="desabilitado || carregando"
+    (click)="executar()"
+    [class.h-12]="tamanho === 'grande'"
+    type="button">
+    @if (carregando) {
+      <mat-spinner diameter="18" class="inline-block mr-2"></mat-spinner>
+    }
+    {{ rotulo }}
+  </button>
+}

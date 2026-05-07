@@ -1,0 +1,98 @@
+<div class="p-6">
+  <div class="flex items-center gap-3 mb-6">
+    <a mat-button routerLink="/ordens">
+      <mat-icon>arrow_back</mat-icon>
+      Voltar
+    </a>
+  </div>
+
+  <mat-card appearance="outlined" class="max-w-2xl mx-auto">
+    <mat-card-header class="pb-4">
+      <mat-card-title class="text-operador-xl">Nova Ordem de Produção</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (erro()) {
+        <div class="bg-red-50 border border-red-200 text-red-700 rounded p-3 mb-4 text-operador-sm">
+          {{ erro() }}
+        </div>
+      }
+
+      <form [formGroup]="formulario" (ngSubmit)="enviar()" class="flex flex-col gap-4">
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Descrição</mat-label>
+          <textarea matInput formControlName="descricao" rows="3"
+            placeholder="Descreva o objetivo desta ordem"></textarea>
+          @if (formulario.get('descricao')?.hasError('required') && formulario.get('descricao')?.touched) {
+            <mat-error>Descrição é obrigatória</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Máquina</mat-label>
+          <mat-select formControlName="maquinaId">
+            @for (maquina of maquinas(); track maquina.id) {
+              <mat-option [value]="maquina.id">
+                {{ maquina.nome }} — {{ maquina.tipo }}
+              </mat-option>
+            }
+          </mat-select>
+          @if (formulario.get('maquinaId')?.hasError('required') && formulario.get('maquinaId')?.touched) {
+            <mat-error>Máquina é obrigatória</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Operador Responsável</mat-label>
+          <mat-select formControlName="operadorId">
+            @for (op of operadores(); track op.id) {
+              <mat-option [value]="op.id">
+                {{ op.nome }} ({{ op.login }})
+              </mat-option>
+            }
+          </mat-select>
+          @if (formulario.get('operadorId')?.hasError('required') && formulario.get('operadorId')?.touched) {
+            <mat-error>Operador é obrigatório</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Quantidade Planejada</mat-label>
+          <input matInput type="number" formControlName="quantidadePlanejada"
+            placeholder="Ex.: 1000" step="0.0001" min="0.0001" />
+          @if (formulario.get('quantidadePlanejada')?.hasError('required') && formulario.get('quantidadePlanejada')?.touched) {
+            <mat-error>Quantidade planejada é obrigatória</mat-error>
+          }
+          @if (formulario.get('quantidadePlanejada')?.hasError('min')) {
+            <mat-error>Quantidade deve ser maior que zero</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Código da Ordem (opcional)</mat-label>
+          <input matInput formControlName="codigoOrdem" placeholder="Ex.: OP-2026-001"
+            maxlength="30" />
+          <mat-hint>Deixe em branco para gerar automaticamente</mat-hint>
+          @if (formulario.get('codigoOrdem')?.hasError('maxlength')) {
+            <mat-error>Máximo 30 caracteres</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="flex justify-end gap-3 pt-2">
+          <a mat-stroked-button routerLink="/ordens">Cancelar</a>
+          <button mat-raised-button color="primary" type="submit"
+            [disabled]="formulario.invalid || enviando()">
+            @if (enviando()) {
+              <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+              <mat-icon>add</mat-icon>
+              Criar Ordem
+            }
+          </button>
+        </div>
+
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

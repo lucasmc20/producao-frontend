@@ -1,0 +1,39 @@
+<div class="p-6">
+  <h1 class="text-operador-xl font-bold mb-6" style="color: #1e3a5f">Estoque de Insumos</h1>
+
+  <mat-form-field appearance="outline" class="w-full max-w-md mb-4">
+    <mat-label>Filtrar por nome</mat-label>
+    <input matInput [ngModel]="filtro()" (ngModelChange)="filtro.set($event)" placeholder="Buscar insumo..." />
+    <mat-icon matPrefix>search</mat-icon>
+  </mat-form-field>
+
+  @if (carregando()) {
+    <mat-progress-bar mode="indeterminate" class="mb-4"></mat-progress-bar>
+  } @else {
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      @for (insumo of insumosFiltrados; track insumo.id) {
+        <mat-card appearance="outlined">
+          <mat-card-content class="p-5">
+            <h3 class="text-operador-lg font-semibold text-gray-900 mb-2">{{ insumo.nome }}</h3>
+            <p class="text-gray-500 text-operador-sm mb-3">{{ insumo.descricao }}</p>
+
+            <div class="flex items-center justify-between">
+              <span class="text-operador-base text-gray-900 font-mono">
+                {{ insumo.saldoDisponivel }} {{ insumo.unidadeMedida | unidadeMedida }}
+              </span>
+              @if (insumo.saldoDisponivel <= insumo.estoqueMinimo) {
+                <app-indicador-status status="PARADA_EMERGENCIA" tamanho="sm"></app-indicador-status>
+              } @else {
+                <app-indicador-status status="OPERANDO" tamanho="sm"></app-indicador-status>
+              }
+            </div>
+
+            <p class="text-xs text-gray-500 mt-2">
+              Estoque mínimo: {{ insumo.estoqueMinimo }} {{ insumo.unidadeMedida | unidadeMedida }}
+            </p>
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+  }
+</div>

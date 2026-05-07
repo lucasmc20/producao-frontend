@@ -1,0 +1,67 @@
+<div class="p-6">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-operador-xl font-bold" style="color: #1e3a5f">Ordens de Produção</h1>
+    @if (auth.perfilAtual() === 'GESTOR' || auth.perfilAtual() === 'ADMINISTRADOR') {
+      <a mat-raised-button color="primary" routerLink="/ordens/nova">
+        <mat-icon>add</mat-icon>
+        Nova Ordem
+      </a>
+    }
+  </div>
+
+  <!-- Filtros -->
+  <mat-chip-listbox class="mb-6" (change)="alterarFiltro($event.value)">
+    @for (status of statusDisponiveis; track status) {
+      <mat-chip-option [value]="status" [selected]="store.filtroStatus() === status">
+        {{ labelStatus(status) }}
+      </mat-chip-option>
+    }
+  </mat-chip-listbox>
+
+  @if (store.carregando()) {
+    <mat-progress-bar mode="indeterminate" class="mb-4"></mat-progress-bar>
+  }
+
+  @if (store.erro(); as erro) {
+    <div class="bg-red-50 border border-red-300 rounded-lg p-4 mb-4">
+      <p class="text-red-700 text-operador-base">{{ erro }}</p>
+    </div>
+  }
+
+  <div class="grid gap-4">
+    @for (ordem of store.ordensFiltradas(); track ordem.id) {
+      <a [routerLink]="['/ordens', ordem.id]" class="block no-underline">
+        <mat-card appearance="outlined" class="hover:shadow-md transition-shadow cursor-pointer">
+          <mat-card-content class="p-5">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-3">
+                <span class="text-operador-lg font-bold text-gray-900 font-mono">{{ ordem.codigoOrdem }}</span>
+                <app-indicador-status [status]="ordem.status" tamanho="sm"></app-indicador-status>
+              </div>
+              @if (ordem.nomeMaquina) {
+                <span class="text-operador-sm text-gray-500">{{ ordem.nomeMaquina }}</span>
+              }
+            </div>
+
+            <p class="text-operador-base text-gray-600 mb-3">{{ ordem.descricao }}</p>
+
+            <div class="flex items-center gap-6 text-operador-sm text-gray-500">
+              <span><mat-icon class="text-base align-middle mr-1">inventory</mat-icon>Planejado: {{ ordem.quantidadePlanejada }}</span>
+              <span><mat-icon class="text-base align-middle mr-1">check_circle</mat-icon>Produzido: {{ ordem.quantidadeProduzida }}</span>
+              @if (ordem.loginOperador) {
+                <span><mat-icon class="text-base align-middle mr-1">person</mat-icon>{{ ordem.loginOperador }}</span>
+              }
+              @if (ordem.iniciadoEm) {
+                <span>{{ ordem.iniciadoEm | date:'dd/MM/yyyy HH:mm' }}</span>
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </a>
+    } @empty {
+      @if (!store.carregando()) {
+        <p class="text-gray-500 text-base text-center py-8">Nenhuma ordem encontrada.</p>
+      }
+    }
+  </div>
+</div>

@@ -1,0 +1,55 @@
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>Registrar Consumo de Insumo</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    @if (mensagemSucesso(); as msg) {
+      <div class="bg-green-50 border border-green-300 rounded-lg p-3 mb-4">
+        <p class="text-green-700 text-operador-sm">{{ msg }}</p>
+      </div>
+    }
+
+    <form [formGroup]="formulario" (ngSubmit)="enviar()" class="flex flex-col gap-4">
+      <mat-form-field appearance="outline">
+        <mat-label>Insumo</mat-label>
+        <mat-select formControlName="insumoId">
+          @for (insumo of insumos(); track insumo.id) {
+            <mat-option [value]="insumo.id">{{ insumo.nome }} ({{ insumo.unidadeMedida | unidadeMedida }})</mat-option>
+          }
+        </mat-select>
+        <mat-icon matPrefix>category</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Quantidade</mat-label>
+        <input matInput type="number" formControlName="quantidade" step="0.01" placeholder="0.00" />
+        <mat-icon matPrefix>scale</mat-icon>
+        @if (formulario.get('quantidade')?.hasError('saldoInsuficiente')) {
+          <mat-error>Saldo insuficiente. Disponível: {{ erroSaldo }}</mat-error>
+        }
+        @if (formulario.get('quantidade')?.pending) {
+          <mat-hint class="text-fabrica-amarelo">Verificando saldo...</mat-hint>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Número do Lote</mat-label>
+        <input matInput formControlName="numeroLote" placeholder="Ex: LT-0042" />
+        <mat-icon matPrefix>qr_code</mat-icon>
+      </mat-form-field>
+
+      <button
+        mat-raised-button
+        color="primary"
+        type="submit"
+        [disabled]="formulario.invalid || formulario.pending || enviando()"
+        class="h-12 self-start">
+        @if (enviando()) {
+          <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+        }
+        <mat-icon>add</mat-icon>
+        Registrar Consumo
+      </button>
+    </form>
+  </mat-card-content>
+</mat-card>

@@ -1,0 +1,216 @@
+<div class="p-6">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-operador-xl font-bold" style="color: #1e3a5f">Gerenciamento de Usuários</h1>
+    @if (auth.perfilAtual() === 'ADMINISTRADOR') {
+      <button mat-raised-button color="primary" (click)="mostrandoFormulario.set(true)">
+        <mat-icon>person_add</mat-icon>
+        Novo Usuário
+      </button>
+    }
+  </div>
+
+  @if (sucesso()) {
+    <div class="bg-green-50 border border-green-200 text-green-700 rounded p-3 mb-4 text-operador-sm">
+      {{ sucesso() }}
+    </div>
+  }
+
+  @if (erro() && !mostrandoFormulario() && !usuarioEditando()) {
+    <div class="bg-red-50 border border-red-200 text-red-700 rounded p-3 mb-4 text-operador-sm">
+      {{ erro() }}
+    </div>
+  }
+
+  <!-- Formulário Novo Usuário -->
+  @if (mostrandoFormulario()) {
+    <mat-card appearance="outlined" class="mb-6 border-l-4 !border-l-fabrica-azul-medio">
+      <mat-card-header class="pb-2">
+        <mat-card-title>Cadastrar Novo Usuário</mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="p-4">
+        @if (erro()) {
+          <div class="bg-red-50 border border-red-200 text-red-700 rounded p-3 mb-4 text-operador-sm">
+            {{ erro() }}
+          </div>
+        }
+
+        <form [formGroup]="formulario" (ngSubmit)="enviar()" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <mat-form-field appearance="outline">
+            <mat-label>Nome Completo</mat-label>
+            <input matInput formControlName="nome" placeholder="Ex.: João da Silva" />
+            @if (formulario.get('nome')?.hasError('required') && formulario.get('nome')?.touched) {
+              <mat-error>Nome é obrigatório</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Login</mat-label>
+            <input matInput formControlName="login" placeholder="Ex.: joao.silva" />
+            @if (formulario.get('login')?.hasError('required') && formulario.get('login')?.touched) {
+              <mat-error>Login é obrigatório</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Senha</mat-label>
+            <input matInput type="password" formControlName="senha" />
+            @if (formulario.get('senha')?.hasError('required') && formulario.get('senha')?.touched) {
+              <mat-error>Senha é obrigatória</mat-error>
+            }
+            @if (formulario.get('senha')?.hasError('minlength')) {
+              <mat-error>Mínimo 6 caracteres</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Perfil de Acesso</mat-label>
+            <mat-select formControlName="perfilAcesso">
+              @for (p of perfis; track p) {
+                <mat-option [value]="p">{{ labelPerfil[p] }}</mat-option>
+              }
+            </mat-select>
+            @if (formulario.get('perfilAcesso')?.hasError('required') && formulario.get('perfilAcesso')?.touched) {
+              <mat-error>Perfil é obrigatório</mat-error>
+            }
+          </mat-form-field>
+
+          <div class="md:col-span-2 flex justify-end gap-3">
+            <button mat-stroked-button type="button" (click)="cancelarFormulario()">Cancelar</button>
+            <button mat-raised-button color="primary" type="submit"
+              [disabled]="formulario.invalid || enviando()">
+              @if (enviando()) {
+                <mat-spinner diameter="20"></mat-spinner>
+              } @else {
+                <mat-icon>save</mat-icon>
+                Cadastrar
+              }
+            </button>
+          </div>
+
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Formulário Edição -->
+  @if (usuarioEditando(); as usuario) {
+    <mat-card appearance="outlined" class="mb-6 border-l-4 !border-l-fabrica-amarelo">
+      <mat-card-header class="pb-2">
+        <mat-card-title>Editar Usuário — {{ usuario.login }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="p-4">
+        @if (erro()) {
+          <div class="bg-red-50 border border-red-200 text-red-700 rounded p-3 mb-4 text-operador-sm">{{ erro() }}</div>
+        }
+        <form [formGroup]="formEdicao" (ngSubmit)="salvarEdicao()" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <mat-form-field appearance="outline">
+            <mat-label>Nome Completo</mat-label>
+            <input matInput formControlName="nome" />
+            @if (formEdicao.get('nome')?.hasError('required') && formEdicao.get('nome')?.touched) {
+              <mat-error>Nome é obrigatório</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Perfil de Acesso</mat-label>
+            <mat-select formControlName="perfilAcesso">
+              @for (p of perfis; track p) {
+                <mat-option [value]="p">{{ labelPerfil[p] }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="md:col-span-2">
+            <mat-label>Nova Senha (opcional — deixe em branco para manter)</mat-label>
+            <input matInput type="password" formControlName="novaSenha" />
+            @if (formEdicao.get('novaSenha')?.hasError('minlength')) {
+              <mat-error>Mínimo 6 caracteres</mat-error>
+            }
+          </mat-form-field>
+
+          <div class="md:col-span-2 flex justify-end gap-3">
+            <button mat-stroked-button type="button" (click)="cancelarEdicao()">Cancelar</button>
+            <button mat-raised-button color="primary" type="submit" [disabled]="formEdicao.invalid || enviando()">
+              @if (enviando()) { <mat-spinner diameter="20"></mat-spinner> }
+              @else { <mat-icon>save</mat-icon> Salvar Alterações }
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Lista de Usuários -->
+  <mat-card appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>Usuários Cadastrados</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if (carregando()) {
+        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+      } @else {
+        <table mat-table [dataSource]="usuarios()" class="w-full">
+
+          <ng-container matColumnDef="nome">
+            <th mat-header-cell *matHeaderCellDef class="text-operador-sm font-semibold">Nome</th>
+            <td mat-cell *matCellDef="let u" class="text-operador-base">{{ u.nome }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="login">
+            <th mat-header-cell *matHeaderCellDef class="text-operador-sm font-semibold">Login</th>
+            <td mat-cell *matCellDef="let u" class="font-mono text-operador-sm">{{ u.login }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="perfil">
+            <th mat-header-cell *matHeaderCellDef class="text-operador-sm font-semibold">Perfil</th>
+            <td mat-cell *matCellDef="let u">
+              <mat-chip [class]="u.perfilAcesso === 'ADMINISTRADOR' ? 'bg-blue-100 text-blue-700' :
+                                  u.perfilAcesso === 'GESTOR' ? 'bg-purple-100 text-purple-700' :
+                                  'bg-gray-100 text-gray-700'">
+                {{ getLabelPerfil(u.perfilAcesso) }}
+              </mat-chip>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="ativo">
+            <th mat-header-cell *matHeaderCellDef class="text-operador-sm font-semibold">Status</th>
+            <td mat-cell *matCellDef="let u">
+              @if (u.ativo) {
+                <span class="text-fabrica-verde text-operador-sm font-medium">Ativo</span>
+              } @else {
+                <span class="text-gray-400 text-operador-sm">Inativo</span>
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="acoes">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let u">
+              @if (isAdministrador()) {
+                <div class="flex items-center gap-1">
+                  <button mat-icon-button title="Editar usuário" (click)="abrirEdicao(u)">
+                    <mat-icon class="text-fabrica-azul-medio">edit</mat-icon>
+                  </button>
+                  <button mat-icon-button title="Desativar usuário" (click)="confirmarDesativar(u)">
+                    <mat-icon class="text-fabrica-vermelho">person_off</mat-icon>
+                  </button>
+                </div>
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="colunas"></tr>
+          <tr mat-row *matRowDef="let row; columns: colunas;" class="hover:bg-gray-50"></tr>
+
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell text-center py-6 text-gray-500" [attr.colspan]="colunas.length">
+              Nenhum usuário encontrado.
+            </td>
+          </tr>
+        </table>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>
